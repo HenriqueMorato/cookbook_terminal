@@ -13,4 +13,12 @@ class Receita
         #{modo_de_preparo}
     MENSAGEM
   end
+
+  def include?(other)
+    nome.downcase.include?(other)
+  end
+
+  def self.search(termo, receitas)
+    receitas.select { |receita| receita.include?(termo) }
+  end
 end
