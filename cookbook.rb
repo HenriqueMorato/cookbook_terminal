@@ -14,27 +14,22 @@ class Cookbook
   def start
     opcao = menu
 
-    receitas = Receita.tipos_de_receita.each_with_object({}) do |k, h|
-      h[k] = []
-    end
-
     while opcao != SAIR
       if opcao == INSERIR_RECEITA
-        receita = insert_recipe
-        receitas[receita.tipo_da_receita] << receita
+        insert_recipe
         wait_keypress
         clear
       elsif opcao == VIZUALIZAR_RECEITA
-        print_hash_with_index(receitas)
-        puts 'Nenhuma receita cadastrada' if receitas.values.flatten.empty?
+        print_hash_with_index(Receita.all)
+        puts 'Nenhuma receita cadastrada' if Receita.empty?
         wait_keypress
         clear
       elsif opcao == PESQUISAR_RECEITA
-        puts search_recipe(receitas)
+        puts search_recipe
         wait_keypress
         clear
       elsif opcao == EXCLUIR_RECEITA
-        remove_recipe(receitas)
+        remove_recipe
         wait_keypress
         clear
       else
@@ -45,7 +40,6 @@ class Cookbook
 
       opcao = menu
     end
-
     puts
     puts 'Obrigado por usar o Cookbook'
   end
@@ -92,42 +86,37 @@ class Cookbook
     tipo_da_receita = read_input.to_i
     puts
     puts "Receita #{nome} cadastrada com sucesso!"
-    Receita.new(nome, modo_de_preparo, tipo_da_receita)
+    Receita.new(nome, modo_de_preparo, tipo_da_receita).save
   end
 
-  def search_recipe(hash)
+  def search_recipe
     puts
     tipos_receita = Receita.tipos_de_receita + ['Todos']
     print_with_index(tipos_receita)
     print 'Você gostaria de procurar uma receita de qual tipo? '
-    tipo = read_input.to_i
+    tipo = read_input.to_i - 1
     print 'Por qual termo você gostaria de pesquisar? '
     termo = read_input
-    if tipo == tipos_receita.length
-      hash = hash.values.flatten
-    else
-      hash = hash[Receita.tipo_de_receita(tipo - 1)]
-    end
-    receitas_encontradas = Receita.search(termo, hash)
+    receitas_encontradas = Receita.search(termo, tipo)
     return 'Nenhuma receita foi encontrada' if receitas_encontradas.empty?
     puts 'Receitas encontradas: '
     receitas_encontradas
   end
 
-  def remove_recipe(hash)
+  def remove_recipe
     puts
     puts 'Tipos de receita:'
     print_with_index(Receita.tipos_de_receita)
     puts
     print 'Você deseja apagar uma receita de que tipo? '
     tipo = read_input.to_i - 1
-    if hash[Receita.tipo_de_receita(tipo)].empty?
+    if Receita.receitas_de_tipo(tipo).empty?
       return puts 'Não há receitas deste tipo para apagar'
     end
-    print_with_index(hash[Receita.tipo_de_receita(tipo)])
+    print_with_index(Receita.receitas_de_tipo(tipo))
     print 'Qual receita você deseja apagar? '
-    index = read_input.to_i
-    hash[Receita.tipo_de_receita(tipo)].delete_at(index - 1)
+    index = read_input.to_i - 1
+    Receita.remove(tipo, index)
     puts 'Receita apagada com sucesso!'
   end
 
@@ -141,9 +130,5 @@ class Cookbook
     hash.each_value do |values|
       print_with_index(values)
     end
-  end
-
-  def print_hash_keys_with_index(hash, key)
-    print_with_index(hash[key])
   end
 end
